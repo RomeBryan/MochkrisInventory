@@ -6,12 +6,14 @@ export default function RequisitionForm() {
   const { createRequisition, requisitions } = useSystem();
   const [item, setItem] = useState("");
   const [qty, setQty] = useState("");
+  const [price, setPrice] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    createRequisition(item, qty);
+    createRequisition(item, qty, null, null, price);
     setItem("");
     setQty("");
+    setPrice("");
 
     // cleaner toast-style alert
     window.alert("✔ Requisition Form Submitted Successfully!");
@@ -37,7 +39,7 @@ export default function RequisitionForm() {
         onSubmit={handleSubmit}
         className="bg-white shadow-sm border border-slate-200 rounded-xl p-6 space-y-4 card-hover"
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="md:col-span-2">
             <label className="text-sm font-semibold text-slate-600">
               Material / Item Name
@@ -50,6 +52,26 @@ export default function RequisitionForm() {
               onChange={(e) => setItem(e.target.value)}
               required
             />
+          </div>
+
+          <div>
+            <label className="text-sm font-semibold text-slate-600">
+              Price
+            </label>
+            <div className="relative mt-1 rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span className="text-slate-500 sm:text-sm">₱</span>
+              </div>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                className="pl-8 mt-1 border border-slate-300 w-full rounded-lg p-2.5 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+              />
+            </div>
           </div>
 
           <div>
@@ -90,6 +112,7 @@ export default function RequisitionForm() {
             <thead>
               <tr className="bg-slate-100 border-b border-slate-300 text-slate-600 text-xs uppercase tracking-wide">
                 <th className="p-3 text-left">Item</th>
+                <th className="p-3 text-left">Price</th>
                 <th className="p-3 text-left">Status</th>
                 <th className="p-3 text-left">Last Update</th>
               </tr>
@@ -98,7 +121,7 @@ export default function RequisitionForm() {
             <tbody>
               {requisitions.length === 0 && (
                 <tr>
-                  <td colSpan="3" className="p-4 text-center text-slate-400">
+                  <td colSpan="4" className="p-4 text-center text-slate-400">
                     No requests submitted yet.
                   </td>
                 </tr>
@@ -112,6 +135,9 @@ export default function RequisitionForm() {
                   <td className="p-3 font-medium text-slate-700">
                     {r.item}{" "}
                     <span className="text-slate-400 text-xs">(x{r.qty})</span>
+                  </td>
+                  <td className="p-3 text-slate-600">
+                    ₱{r.price ? parseFloat(r.price).toFixed(2) : '0.00'}
                   </td>
 
                   {/* STATUS CHIP */}

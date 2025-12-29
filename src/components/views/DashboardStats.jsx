@@ -20,7 +20,7 @@ export default function DashboardStats() {
         Dashboard Overview
       </h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-3">
         <StatCard title="Total Inventory Items" value={inventory.length} icon={Package} color="bg-blue-600" />
         <StatCard title="Low Stock Items" value={lowStock} icon={AlertTriangle} color="bg-orange-500" />
         <StatCard title="Requisitions Pending VP" value={pendingRF} icon={ClipboardList} color="bg-amber-600" />
@@ -107,14 +107,32 @@ export default function DashboardStats() {
   );
 }
 
-const StatCard = ({ title, value, icon: Icon, color }) => (
-  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4 hover:shadow-md transition-all duration-300 card-hover animate-fadeIn">
-    <div className={`p-4 rounded-full ${color} shadow-inner`}>
-      {Icon && <Icon size={26} className="text-white" />}
+const StatCard = ({ title, value, icon: Icon, color }) => {
+  // Abbreviate longer titles
+  const getAbbreviatedTitle = (text) => {
+    const abbreviations = {
+      'Active Purchase Orders': 'Active POs',
+      'Requisitions Pending VP': 'Req. Pending VP',
+      'Forwarded to Purchasing': 'To Purchasing',
+      'Total Inventory Items': 'Total Items',
+      'Low Stock Items': 'Low Stock',
+      'Completed Requests': 'Completed',
+      'Auto-RF Created': 'Auto-RF'
+    };
+    return abbreviations[text] || text;
+  };
+
+  return (
+    <div className="bg-white p-3 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all duration-300 card-hover animate-fadeIn h-20 flex items-center">
+      <div className={`p-2 rounded-full ${color} shadow-inner flex-shrink-0 mr-3`}>
+        {Icon && <Icon size={18} className="text-white" />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-slate-500 text-xs font-medium leading-tight whitespace-nowrap">
+          {getAbbreviatedTitle(title)}
+        </p>
+        <h3 className="text-xl font-bold text-slate-800">{value}</h3>
+      </div>
     </div>
-    <div>
-      <p className="text-slate-500 text-xs font-medium">{title}</p>
-      <h3 className="text-xl font-bold text-slate-800 mt-1">{value}</h3>
-    </div>
-  </div>
-);
+  );
+};

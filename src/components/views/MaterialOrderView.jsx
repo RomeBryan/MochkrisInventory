@@ -1,61 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSystem } from "../../context/SystemContext";
-import { Plus, PackagePlus, Clock, CheckCircle, XCircle, AlertTriangle, Building2 } from "lucide-react";
+import { Plus, PackagePlus, Building2 } from "lucide-react";
 
-// Status badge component
-const StatusBadge = ({ status }) => {
-  const statusConfig = {
-    PENDING: { 
-      icon: <Clock size={14} className="mr-1" />, 
-      bg: 'bg-yellow-50', 
-      text: 'text-yellow-800',
-      label: 'Pending'
-    },
-    APPROVED: { 
-      icon: <CheckCircle size={14} className="mr-1" />, 
-      bg: 'bg-green-50', 
-      text: 'text-green-800',
-      label: 'Approved'
-    },
-    REJECTED: { 
-      icon: <XCircle size={14} className="mr-1" />, 
-      bg: 'bg-red-50', 
-      text: 'text-red-800',
-      label: 'Rejected'
-    },
-    default: { 
-      icon: <AlertTriangle size={14} className="mr-1" />, 
-      bg: 'bg-gray-100', 
-      text: 'text-gray-800',
-      label: status
-    }
-  };
-  
-  const config = statusConfig[status] || statusConfig.default;
-  
-  return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
-      {config.icon}
-      {config.label}
-    </span>
-  );
-};
-
-export default function RequisitionView() {
+export default function MaterialOrderView() {
   const { 
     inventory, 
-    createRequisition, 
-    requisitions, 
-    addNewInventoryItem, 
+    purchaseStockDirect, 
+    purchaseOrders,
     suppliers, 
-    addNewSupplier 
+    addNewSupplier,
+    addNewInventoryItem
   } = useSystem();
   
-  // Sort requisitions by date (newest first)
-  const myRequisitions = [...requisitions]
-    .sort((a, b) => new Date(b.requestDate) - new Date(a.requestDate));
-    
-  // Form state
+  // Filter to show only direct purchase orders (created through this interface)
+  const myOrders = purchaseOrders
+    .filter(po => po.type === 'DIRECT_PURCHASE')
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  
   const [selectedProductId, setSelectedProductId] = useState('');
   const [qty, setQty] = useState('');
   const [selectedSupplier, setSelectedSupplier] = useState('');
@@ -63,14 +24,12 @@ export default function RequisitionView() {
   const [showNewSupplierForm, setShowNewSupplierForm] = useState(false);
   const [notes, setNotes] = useState('');
   
-  // New supplier form state
   const [newSupplier, setNewSupplier] = useState({
     name: '',
     contact: '',
     email: ''
   });
   
-  // New item form state
   const [newItem, setNewItem] = useState({
     name: '',
     price: 0,
@@ -79,8 +38,6 @@ export default function RequisitionView() {
     restockThreshold: 3,
     restockQty: 10
   });
-  
-  // StatusBadge component is now defined at the top level
 
   const handleAddSupplier = (e) => {
     e.preventDefault();
@@ -98,7 +55,7 @@ export default function RequisitionView() {
     setSelectedSupplier(newSupplierObj.id);
     setNewSupplier({ name: '', contact: '', email: '' });
     setShowNewSupplierForm(false);
-  }; 
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -113,17 +70,15 @@ export default function RequisitionView() {
     const selectedSupplierData = suppliers.find(s => s.id === selectedSupplier);
     if (!selectedSupplierData) return;
     
-    // Get the price from the product or default to 0
-    const itemPrice = product.price || 0;
+    // Create direct purchase order (no approval needed)
+    const items = [{
+      product_id: product.product_id,
+      qty: parseInt(qty),
+      name: product.name,
+      price: product.price || 0
+    }];
     
-    // Call createRequisition with individual parameters
-    createRequisition(
-      product.name,  // itemName
-      parseInt(qty), // qty
-      product.product_id, // product_id
-      selectedSupplierData, // supplier
-      itemPrice // price
-    );
+    purchaseStockDirect(items, selectedSupplierData.name, notes || 'Direct purchase order');
     
     // Reset form
     setSelectedProductId('');
@@ -131,7 +86,7 @@ export default function RequisitionView() {
     setSelectedSupplier('');
     setNotes('');
     
-    alert('Material Request (RF) submitted successfully!');
+    alert('Material Order (PO) created successfully!');
   };
 
   const handleAddNewItem = async (e) => {
@@ -162,14 +117,14 @@ export default function RequisitionView() {
       setShowNewItemForm(false);
     } catch (error) {
       console.error('Error adding new item:', error);
-      // You might want to show an error message to the user here
+      alert('Failed to add new item. Please try again.');
     }
   };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-slate-800">Material Requests (RF)</h2>
+        <h2 className="text-2xl font-bold text-slate-800">New Material Order (PO)</h2>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -178,8 +133,9 @@ export default function RequisitionView() {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 sticky top-24 h-full">
             <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
               <Plus size={20} className="text-indigo-600" /> 
-              Create Material Request (RF)
+              Create Material Order (PO)
             </h3>
+            
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
@@ -204,7 +160,6 @@ export default function RequisitionView() {
                         onChange={(e) => setNewItem({...newItem, name: e.target.value})}
                         className="w-full border p-2 rounded text-sm"
                         placeholder="Enter item name"
-                        required
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -214,7 +169,6 @@ export default function RequisitionView() {
                           value={newItem.unit}
                           onChange={(e) => setNewItem({...newItem, unit: e.target.value})}
                           className="w-full border p-2 rounded text-sm"
-                          required
                         >
                           <option value="pcs">Pieces</option>
                           <option value="gals">Gallons</option>
@@ -237,7 +191,6 @@ export default function RequisitionView() {
                             onChange={(e) => setNewItem({...newItem, price: e.target.value ? parseFloat(e.target.value) : 0})}
                             className="w-full border p-2 pl-8 rounded text-sm"
                             placeholder="0.00"
-                            required
                           />
                         </div>
                       </div>
@@ -249,7 +202,6 @@ export default function RequisitionView() {
                           value={newItem.restockThreshold}
                           onChange={(e) => setNewItem({...newItem, restockThreshold: parseInt(e.target.value) || 0})}
                           className="w-full border p-2 rounded text-sm"
-                          required
                         />
                       </div>
                       <div>
@@ -279,6 +231,7 @@ export default function RequisitionView() {
                     value={selectedProductId} 
                     onChange={e => setSelectedProductId(e.target.value)} 
                     className="w-full border p-2 rounded text-sm"
+                    required
                   >
                     <option value=''>-- Choose Item --</option>
                     {inventory.map(i => (
@@ -289,6 +242,7 @@ export default function RequisitionView() {
                   </select>
                 )}
               </div>
+              
               <div>
                 <label className="block text-sm text-slate-500 mb-1">Quantity</label>
                 <input 
@@ -297,12 +251,13 @@ export default function RequisitionView() {
                   value={qty} 
                   onChange={e => setQty(e.target.value)} 
                   className="w-full border p-2 rounded" 
+                  required
                 />
               </div>
               
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="block text-sm text-slate-500">Preferred Supplier</label>
+                  <label className="block text-sm text-slate-500">Supplier</label>
                   <button 
                     type="button"
                     onClick={() => setShowNewSupplierForm(!showNewSupplierForm)}
@@ -323,6 +278,7 @@ export default function RequisitionView() {
                         onChange={(e) => setNewSupplier({...newSupplier, name: e.target.value})}
                         className="w-full border p-2 rounded text-sm"
                         placeholder="Enter supplier name"
+                        required
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -357,6 +313,7 @@ export default function RequisitionView() {
                     </button>
                   </div>
                 )}
+                
                 <select 
                   value={selectedSupplier}
                   onChange={e => setSelectedSupplier(e.target.value)}
@@ -366,114 +323,120 @@ export default function RequisitionView() {
                   <option value="">-- Select Supplier --</option>
                   {suppliers.map(supplier => (
                     <option key={supplier.id} value={supplier.id}>
-                      {supplier.name}
+                      {supplier.name} 
+                      {supplier.contact ? ` (${supplier.contact}${supplier.email ? `, ${supplier.email}` : ''})` : ''}
                     </option>
                   ))}
                 </select>
               </div>
-
-              <div className="pt-2">
+              
+              <div>
                 <label className="block text-sm text-slate-500 mb-1">Notes (Optional)</label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   className="w-full border p-2 rounded text-sm"
                   rows="3"
-                  placeholder="Add any additional notes..."
-                />
+                  placeholder="Any special instructions or notes..."
+                ></textarea>
               </div>
-
-              <button
-                type="submit"
-                className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors mt-4"
-                disabled={!selectedProductId || !qty || !selectedSupplier}
+              
+              <button 
+                type="submit" 
+                className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 transition"
               >
-                Submit Request
+                Create Material Order (PO)
               </button>
             </form>
           </div>
         </div>
 
-        {/* Right column - My Requests and About */}
+        {/* Right Column */}
         <div className="lg:col-span-2 space-y-6">
-          {/* My Requests */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="p-4 border-b border-slate-100">
-              <h3 className="font-semibold text-slate-800">My Requests</h3>
-            </div>
-            
-            {myRequisitions.length === 0 ? (
-              <div className="p-8 text-center text-slate-400">
-                No requests found.
+          {/* My Orders Section */}
+          <div>
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="p-4 border-b bg-slate-50">
+                <h3 className="font-bold">My Orders</h3>
               </div>
-            ) : (
-              <div className="divide-y divide-slate-100">
-                {myRequisitions.map((req) => (
-                  <div key={req.id} className="p-4 hover:bg-slate-50 transition-colors">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="font-medium text-slate-800">
-                          {req.qty} x {req.item}
-                        </div>
-                        <div className="text-sm text-slate-500 mt-1">
-                          {req.supplier?.name && (
-                            <span className="inline-flex items-center">
-                              <Building2 size={14} className="mr-1 text-indigo-400" />
-                              {req.supplier.name}
-                            </span>
-                          )}
-                          <span className="mx-2">•</span>
-                          <span>Requested on {new Date(req.requestDate).toLocaleString()}</span>
-                        </div>
-                        {req.notes && (
-                          <div className="mt-2 text-sm text-slate-600 bg-slate-50 p-2 rounded">
-                            <span className="font-medium">Notes:</span> {req.notes}
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <StatusBadge status={req.status} />
-                        <div className="text-xs text-slate-400 mt-1">
-                          {req.history?.[0] || 'No status update'}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* About Material Requests */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="p-4 border-b border-slate-100">
-              <h3 className="font-semibold text-slate-800">About Material Requests</h3>
-            </div>
-            <div className="p-4 text-sm text-slate-600 space-y-3">
-              <p>
-                Material Requests (RF) are used to request approval for purchasing new inventory items. 
-                All requests must be approved by the appropriate personnel before they are processed.
-              </p>
               <div>
-                <span className="font-medium">Status Indicators:</span>
-                <ul className="list-disc pl-5 mt-1 space-y-1">
-                  <li className="flex items-center">
-                    <StatusBadge status="PENDING" />
-                    <span className="ml-2">Awaiting approval</span>
-                  </li>
-                  <li className="flex items-center">
-                    <StatusBadge status="APPROVED" />
-                    <span className="ml-2">Approved and being processed</span>
-                  </li>
-                  <li className="flex items-center">
-                    <StatusBadge status="REJECTED" />
-                    <span className="ml-2">Request was not approved</span>
-                  </li>
-                </ul>
+                {myOrders.length === 0 ? (
+                  <div className="p-8 text-center text-slate-400">No orders found.</div>
+                ) : (
+                  <div className="divide-y">
+                    {myOrders.map(order => (
+                      <div key={order.id} className="p-4 hover:bg-slate-50">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="font-medium">
+                              {order.items?.map((item, idx) => (
+                                <div key={idx} className="mb-1">
+                                  {item.qty} × {item.name || `Item ${item.product_id}`}
+                                </div>
+                              ))}
+                            </div>
+                            <div className="text-sm text-slate-500 mt-1">
+                              Supplier: {order.supplier || 'N/A'}
+                            </div>
+                            <div className="text-xs text-slate-400 mt-1">
+                              {new Date(order.createdAt).toLocaleString()}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              order.status === 'SENT_TO_SUPPLIER' 
+                                ? 'bg-blue-100 text-blue-800' 
+                                : order.status === 'COMPLETED'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {order.status.replace(/_/g, ' ')}
+                            </span>
+                            <div className="text-xs text-slate-500 mt-1">
+                              {order.history?.[order.history.length - 1] || 'Order created'}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <p>
-                For any questions about the status of your request, please contact the inventory department.
-              </p>
+            </div>
+          </div>
+          
+          {/* About Material Orders Section */}
+          <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div className="p-4 border-b bg-slate-50">
+              <h3 className="font-bold">About Material Orders (PO)</h3>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                <h4 className="font-semibold text-blue-800 mb-2">Direct Purchase Order</h4>
+                <p className="text-sm text-slate-600">
+                  This is a direct purchase order that will be processed immediately without requiring approval. 
+                  Use this for urgent or small purchases that don't need management approval.
+                </p>
+              </div>
+              
+              <div className="space-y-3">
+                <h4 className="font-semibold">How to create a Material Order:</h4>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-slate-600">
+                  <li>Select an item from the inventory or add a new one</li>
+                  <li>Enter the quantity needed</li>
+                  <li>Select a supplier or add a new one</li>
+                  <li>Add any special notes if needed</li>
+                  <li>Click "Create Material Order" to submit</li>
+                </ol>
+              </div>
+              
+              <div className="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-100">
+                <h4 className="font-semibold text-amber-800 mb-2">Note</h4>
+                <p className="text-sm text-slate-600">
+                  This order will be sent directly to the purchasing department for processing. 
+                  You can track its status in the dashboard.
+                </p>
+              </div>
             </div>
           </div>
         </div>

@@ -9,8 +9,11 @@ import ApprovalsView from "./components/PendingApprovals";
 import InventoryView from "./components/InventoryCheck";
 import PurchasingView from "./components/PurchasingView";
 import DeliveryView from "./components/DeliveryReceiving";
+import ManagementView from "./components/views/ManagementView";
+import MaterialOrderView from "./components/views/MaterialOrderView";
+import PurchaseOrderView from "./components/views/PurchaseOrderView/PurchaseOrderView";
 
-// NEW — direct purchase screen
+// Direct purchase screen
 import CreateDirectPurchase from "./components/views/CreateDirectPurchase";
 
 export default function App() {
@@ -21,10 +24,8 @@ export default function App() {
 
   // Allowed pages per role (Business Flow Based)
   const rolePermissions = {
-    DEPARTMENT: ["dashboard", "requisition"],
-    VP: ["dashboard", "approvals"],
-    CUSTODIAN: ["dashboard", "inventory", "delivery"],
-    PURCHASING: ["dashboard", "purchasing", "direct_purchase"], // <-- Added
+    DEPARTMENT: ["dashboard", "material_order", "management", "approvals"],
+    CUSTODIAN: ["dashboard", "inventory", "delivery", "purchasing", "direct_purchase", "approvals", "requisition", "management", "purchase_orders"]
   };
 
   // Reset to dashboard when role changes
@@ -45,11 +46,14 @@ export default function App() {
     switch (activeTab) {
       case "dashboard": return <DashboardStats />;
       case "requisition": return <RequisitionView />;
+      case "material_order": return <MaterialOrderView />;
       case "approvals": return <ApprovalsView />;
       case "inventory": return <InventoryView />;
       case "delivery": return <DeliveryView />;
+      case "management": return <ManagementView />;
       case "purchasing": return <PurchasingView />;
-      case "direct_purchase": return <CreateDirectPurchase />; // <-- fixed
+      case "direct_purchase": return <CreateDirectPurchase />;
+      case "purchase_orders": return <PurchaseOrderView />;
       default: return <DashboardStats />;
     }
   };
