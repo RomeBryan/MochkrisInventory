@@ -1,13 +1,30 @@
+import React from 'react';
 import { Package, AlertTriangle, CheckCircle, Clock, ClipboardList, ShoppingCart, Truck, PlusCircle } from "lucide-react";
 import { useSystem } from "../../context/SystemContext";
 
 export default function DashboardStats() {
   const { inventory, requisitions, purchaseOrders, autoRestockedItems, autoCreateRequisition } = useSystem();
 
-  if (!inventory || !requisitions) return <div className="p-4">Loading system data...</div>;
+  // Check if data is still loading (initial render or data fetching)
+  const [isLoading, setIsLoading] = React.useState(true);
+  
+  React.useEffect(() => {
+    // Set loading to false once we have data
+    if (inventory && requisitions) {
+      setIsLoading(false);
+    }
+  }, [inventory, requisitions]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
 
   const lowStock = inventory.filter(i => i.qty < 3).length;
-  const pendingRF = requisitions.filter(r => r.status === "PENDING_VP_APPROVAL").length;
+  const pendingRF = requisitions.filter(r => r.status === "PENDING APPROVAL").length;
   const forPurchasing = requisitions.filter(r => r.status === "FORWARDED_TO_PURCHASING").length;
   const ongoingPO = purchaseOrders.filter(p => p.status !== "COMPLETED").length;
   const completedTransactions = requisitions.filter(r => r.status === "COMPLETED").length;
@@ -66,7 +83,7 @@ export default function DashboardStats() {
                         className="flex items-center gap-1 text-sm bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700 transition"
                         onClick={() => autoCreateRequisition(item)}
                       >
-                        <PlusCircle size={16} /> Create RF
+                        <PlusCircle size={16} /> Create PO
                       </button>
                     </td>
                   </tr>

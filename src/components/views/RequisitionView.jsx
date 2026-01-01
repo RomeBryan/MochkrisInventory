@@ -5,6 +5,12 @@ import { Plus, PackagePlus, Clock, CheckCircle, XCircle, AlertTriangle, Building
 // Status badge component
 const StatusBadge = ({ status }) => {
   const statusConfig = {
+    'PENDING APPROVAL': {
+      icon: null,
+      bg: 'bg-blue-50',
+      text: 'text-blue-800',
+      label: 'PENDING APPROVAL'
+    },
     PENDING: { 
       icon: <Clock size={14} className="mr-1" />, 
       bg: 'bg-yellow-50', 
@@ -35,7 +41,7 @@ const StatusBadge = ({ status }) => {
   
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
-      {config.icon}
+      {status === 'PENDING APPROVAL' ? null : config.icon}
       {config.label}
     </span>
   );
@@ -364,11 +370,66 @@ export default function RequisitionView() {
                   required
                 >
                   <option value="">-- Select Supplier --</option>
-                  {suppliers.map(supplier => (
-                    <option key={supplier.id} value={supplier.id}>
-                      {supplier.name}
-                    </option>
-                  ))}
+                  {Array.isArray(suppliers) && suppliers.map(supplier => {
+                    if (!supplier || typeof supplier !== 'object') {
+                      console.error('Invalid supplier data:', supplier);
+                      return null;
+                    }
+
+                    try {
+                      const contactInfo = [];
+                      if (supplier.contact) contactInfo.push(supplier.contact);
+                      if (supplier.email) contactInfo.push(supplier.email);
+                      const contactStr = contactInfo.join(' • ');
+                      
+                      // Format rating text and color
+                      const formatRating = (rating) => {
+                        try {
+                          if (rating === null || rating === undefined || rating === '') return null;
+                          
+                          // Convert rating to string if it's a number or string number
+                          let ratingStr;
+                          if (typeof rating === 'number') {
+                            ratingStr = rating >= 4.5 ? 'excellent' : 
+                                      rating >= 3.5 ? 'good' : 
+                                      rating >= 2.5 ? 'average' : 'poor';
+                            
+                            // Map rating to display text
+                            return ratingStr.charAt(0).toUpperCase() + ratingStr.slice(1);
+                          }
+                          return '';
+                        } catch (error) {
+                          console.error('Error formatting rating:', error, 'Rating value:', rating);
+                          return '';
+                        }
+                      };
+
+                      // Function to get rating color class (for use outside of option elements)
+                      const getRatingColorClass = (rating) => {
+                        if (rating === undefined || rating === null) return '';
+                        const ratingStr = String(rating).toLowerCase().trim();
+                        return {
+                          'excellent': 'bg-green-100 text-green-800',
+                          'good': 'bg-blue-100 text-blue-800',
+                          'average': 'bg-yellow-100 text-yellow-800',
+                          'poor': 'bg-red-100 text-red-800'
+                        }[ratingStr] || 'bg-gray-100 text-gray-800';
+                      };
+
+                      return (
+                        <option key={supplier.id} value={supplier.id}>
+                          {supplier.name || 'Unnamed Supplier'}
+                          {contactStr && ` (${contactStr})`}
+                          {supplier.rating !== undefined && supplier.rating !== null && (
+                            ` (${formatRating(supplier.rating)})`
+                          )}
+                        </option>
+                      );
+                    } catch (error) {
+                      console.error('Error rendering supplier option:', error, 'Supplier data:', supplier);
+                      return null;
+                    }
+                  })}
                 </select>
               </div>
 

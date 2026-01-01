@@ -137,3 +137,22 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
+
+app.get('/api/test-db', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT NOW() as current_time');
+    res.json({
+      success: true,
+      message: 'Database connection successful',
+      time: result.rows[0].current_time
+    });
+  } catch (err) {
+    console.error('Database connection error:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Database connection failed',
+      details: err.message
+    });
+  }
+});

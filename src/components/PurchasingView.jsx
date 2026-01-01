@@ -144,8 +144,8 @@ export default function PurchasingView() {
                 className={`badge ${
                   po.status === "PENDING_PO_APPROVAL"
                     ? "bg-amber-100 text-amber-700"
-                    : po.status === "SENT_TO_SUPPLIER"
-                    ? "bg-indigo-100 text-indigo-700"
+                    : po.status === "SENT TO MANAGER"
+                    ? "bg-blue-600 text-white"
                     : po.status === "COMPLETED"
                     ? "bg-green-100 text-green-700"
                     : "bg-slate-100 text-slate-600"

@@ -13,7 +13,7 @@ export default function DeliveryReceiving() {
   const [selectedPO, setSelectedPO] = useState(null);
 
   const incomingDeliveries = purchaseOrders.filter(
-    (po) => po.status === "SENT_TO_SUPPLIER"
+    (po) => po.status === "SENT TO MANAGER"
   );
 
   const openConfirm = (po, damaged) => {

@@ -384,11 +384,13 @@ export default function MaterialOrderView() {
                           </div>
                           <div className="text-right">
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              order.status === 'SENT_TO_SUPPLIER' 
-                                ? 'bg-blue-100 text-blue-800' 
-                                : order.status === 'COMPLETED'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-yellow-100 text-yellow-800'
+                              order.status === 'SENT_TO_MANAGER' 
+                                ? 'bg-blue-50 text-blue-800' // Light blue background, dark blue text (matching PENDING APPROVAL style)
+                                : order.status === 'REJECTED' || order.status === 'RETURNED_TO_PURCHASING'
+                                ? 'bg-red-50 text-red-800'  // Light red background, dark red text
+                                : order.status === 'APPROVED' || order.status === 'COMPLETED' || order.status === 'PO_GENERATED'
+                                ? 'bg-green-50 text-green-800' // Light green background, dark green text
+                                : 'bg-yellow-50 text-yellow-800' // Light yellow background, dark yellow text
                             }`}>
                               {order.status.replace(/_/g, ' ')}
                             </span>

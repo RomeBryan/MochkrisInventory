@@ -68,14 +68,6 @@ export default function Header({
           </select>
         </div>
 
-        {/* ---- Separator ---- */}
-        <div className="hidden md:block h-6 w-px bg-slate-200"></div>
-
-        {/* ---- Notification Icon ---- */}
-        <button className="relative text-slate-400 hover:text-indigo-600 transition-colors">
-          <Bell size={20} />
-          <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
-        </button>
 
         {/* ---- Profile ---- */}
         <div className="flex items-center gap-2 cursor-pointer">
