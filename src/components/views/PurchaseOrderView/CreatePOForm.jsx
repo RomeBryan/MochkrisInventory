@@ -161,19 +161,8 @@ export default function CreatePOForm({
                         return null;
                       }
                       
-                      const ratingText = ratingStr.charAt(0).toUpperCase() + ratingStr.slice(1);
-                      const colorClass = {
-                        'excellent': 'bg-green-100 text-green-800',
-                        'good': 'bg-blue-100 text-blue-800',
-                        'average': 'bg-yellow-100 text-yellow-800',
-                        'poor': 'bg-red-100 text-red-800'
-                      }[ratingStr] || 'bg-gray-100 text-gray-800';
-                      
-                      return (
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colorClass} ml-1`}>
-                          {' '}{ratingText}
-                        </span>
-                      );
+                      // Return plain text for the dropdown
+                      return ratingStr.charAt(0).toUpperCase() + ratingStr.slice(1);
                     } catch (error) {
                       console.error('Error formatting rating:', error, 'Rating value:', rating);
                       return null;
@@ -185,10 +174,7 @@ export default function CreatePOForm({
                       {supplier.name || 'Unnamed Supplier'}
                       {contactStr && ` (${contactStr})`}
                       {supplier.rating !== undefined && supplier.rating !== null && (
-                        <>
-                          {' '}
-                          {formatRating(supplier.rating)}
-                        </>
+                        ` (${formatRating(supplier.rating)})`
                       )}
                     </option>
                   );

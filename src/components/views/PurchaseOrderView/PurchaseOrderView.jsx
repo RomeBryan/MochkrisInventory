@@ -9,7 +9,7 @@ import SupplierRatingModal from './SupplierRatingModal.jsx';
 import { useSystem } from '../../../context/SystemContext';
 
 export default function PurchaseOrderView({ currentRole = 'DEPARTMENT' }) {
-  const { inventory, suppliers } = useSystem();
+  const { inventory, suppliers, rateSupplier: rateSupplierInContext } = useSystem();
   
   // Map role to user object for compatibility
   const user = {
@@ -127,10 +127,28 @@ export default function PurchaseOrderView({ currentRole = 'DEPARTMENT' }) {
 
   const handleRateSupplier = async (poId, ratingData) => {
     try {
+      // 1. Update the backend
       await purchaseOrderService.rateSupplier(poId, ratingData);
+      
+      // 2. Update the SystemContext
+      if (selectedPOForRating?.supplier_id) {
+        // Calculate the average rating from all rating dimensions
+        const { delivery_rating, quality_rating, price_rating } = ratingData;
+        const averageRating = (delivery_rating + quality_rating + price_rating) / 3;
+        
+        await rateSupplierInContext(poId, {
+          supplierId: selectedPOForRating.supplier_id,
+          rating: averageRating,
+          comment: ratingData.notes || 'Rated from PO',
+          ratedBy: user.id
+        });
+      }
+
+      // 3. Update the UI
       setShowRatingModal(false);
       setSelectedPOForRating(null);
       loadPurchaseOrders();
+      
       if (selectedPO?.id === poId) {
         // Refresh the selected PO data
         const response = await purchaseOrderService.getPO(poId);

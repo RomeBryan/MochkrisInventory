@@ -441,13 +441,20 @@ export const SystemProvider = ({ children }) => {
   };
 
   // Update supplier
-  const updateSupplier = (updatedSupplier) => {
-    setSuppliers(prev => 
-      prev.map(supplier => 
-        supplier.id === updatedSupplier.id ? { ...supplier, ...updatedSupplier } : supplier
+  const updateSupplier = useCallback((updatedSupplier) => {
+    setSuppliers(prevSuppliers => 
+      prevSuppliers.map(supplier => 
+        supplier.id === updatedSupplier.id 
+          ? { 
+              ...supplier, 
+              ...updatedSupplier,
+              // Ensure ratings array is preserved if not provided
+              ratings: updatedSupplier.ratings || supplier.ratings || []
+            } 
+          : supplier
       )
     );
-  };
+  }, []);
 
   // Add new supplier
   const addNewSupplier = (supplier) => {

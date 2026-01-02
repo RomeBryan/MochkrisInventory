@@ -2,6 +2,19 @@ import React, { useState, useEffect } from "react";
 import { useSystem } from "../../context/SystemContext";
 import { Plus, PackagePlus, Building2 } from "lucide-react";
 
+// Helper function to convert numeric rating to text
+const getRatingText = (rating) => {
+  if (rating === null || rating === undefined) return '';
+  // Convert to number in case it's a string
+  const numRating = Number(rating);
+  if (isNaN(numRating)) return '';
+  
+  if (numRating >= 4.5) return 'Excellent';
+  if (numRating >= 3.5) return 'Good';
+  if (numRating >= 2.5) return 'Average';
+  return 'Needs Improvement';
+};
+
 export default function MaterialOrderView() {
   const { 
     inventory, 
@@ -11,6 +24,11 @@ export default function MaterialOrderView() {
     addNewSupplier,
     addNewInventoryItem
   } = useSystem();
+  
+  // Debug: Log when suppliers data changes
+  useEffect(() => {
+    console.log('Suppliers updated:', suppliers);
+  }, [suppliers]);
   
   // Filter to show only direct purchase orders (created through this interface)
   const myOrders = purchaseOrders
@@ -120,6 +138,13 @@ export default function MaterialOrderView() {
       alert('Failed to add new item. Please try again.');
     }
   };
+
+  // Debugging output - check supplier ratings
+  console.log('Suppliers with ratings:', suppliers.map(s => ({ 
+    name: s.name, 
+    rating: s.rating,
+    ratingText: getRatingText(s.rating) 
+  })));
 
   return (
     <div className="space-y-6">
@@ -321,17 +346,34 @@ export default function MaterialOrderView() {
                   required
                 >
                   <option value="">-- Select Supplier --</option>
-                  {suppliers.map(supplier => (
-                    <option key={supplier.id} value={supplier.id}>
-                      {supplier.name} 
-                      {supplier.contact ? ` (${supplier.contact}${supplier.email ? `, ${supplier.email}` : ''})` : ''}
-                    </option>
-                  ))}
+                  {suppliers.map(supplier => {
+                    const contactInfo = [];
+                    if (supplier.contact) contactInfo.push(supplier.contact);
+                    if (supplier.email) contactInfo.push(supplier.email);
+                    const contactStr = contactInfo.join(' • ');
+                    
+                    const ratingValue = typeof supplier.rating === 'number' ? supplier.rating : 
+                                     (supplier.ratings && supplier.ratings.length > 0 ? 
+                                      supplier.ratings.reduce((sum, r) => sum + r.value, 0) / supplier.ratings.length : 
+                                      null);
+                    
+                    const ratingText = ratingValue !== null && !isNaN(ratingValue)
+                      ? ` (${getRatingText(ratingValue)})`
+                      : '';
+                    
+                    return (
+                      <option key={supplier.id} value={supplier.id}>
+                        {supplier.name}
+                        {contactStr && ` (${contactStr})`}
+                        {ratingText}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
               
               <div>
-                <label className="block text-sm text-slate-500 mb-1">Notes (Optional)</label>
+                <label className="block text-sm text-slate-500 mb-1">Notes</label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
