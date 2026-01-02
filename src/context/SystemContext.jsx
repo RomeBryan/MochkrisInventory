@@ -1,18 +1,238 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 
 const SystemContext = createContext();
 
+// Helper function to format dates
+const formatDate = (date) => new Date(date).toISOString();
+
 export const SystemProvider = ({ children }) => {
-  // Inventory mock
+  // Inventory state
   const [inventory, setInventory] = useState([
     { product_id: 1, name: 'Mahogany Wood Plank', qty: 5, unit: 'pcs', restockThreshold: 3, restockQty: 10 },
     { product_id: 2, name: 'Wood Glue (Industrial)', qty: 2, unit: 'gals', restockThreshold: 5, restockQty: 20 },
     { product_id: 3, name: 'Upholstery Fabric', qty: 0, unit: 'meters', restockThreshold: 2, restockQty: 15 },
   ]);
 
+  // Suppliers state with initial ratings
+  const [suppliers, setSuppliers] = useState([
+    { 
+      id: 'supplier-1', 
+      name: 'WoodWorks Inc.',
+      contact: '(555) 123-4567',
+      email: 'contact@woodworks.com',
+      rating: 4.2,
+      ratings: [
+        { value: 4, comment: 'Good quality materials', date: '2023-01-15' },
+        { value: 5, comment: 'Excellent service', date: '2023-03-22' }
+      ]
+    },
+    { 
+      id: 'supplier-2', 
+      name: 'Global Furnishings',
+      contact: '(555) 234-5678',
+      email: 'sales@globalfurnishings.com',
+      rating: 3.8,
+      ratings: [
+        { value: 4, comment: 'Good prices', date: '2023-02-10' },
+        { value: 3, comment: 'Average quality', date: '2023-04-05' }
+      ]
+    },
+    { 
+      id: 'supplier-3', 
+      name: 'Local Supply Co.',
+      contact: '(555) 345-6789',
+      email: 'info@localsupply.co',
+      rating: 4.5,
+      ratings: [
+        { value: 5, comment: 'Fast delivery', date: '2023-01-30' },
+        { value: 4, comment: 'Good support', date: '2023-03-15' }
+      ]
+    },
+  ]);
+
   const [requisitions, setRequisitions] = useState([]);
   const [purchaseOrders, setPurchaseOrders] = useState([]);
-  const [autoRestockedItems, setAutoRestockedItems] = useState([]); // stores auto-created RF logs
+  const [purchaseRequests, setPurchaseRequests] = useState([]);
+  const [autoRestockedItems, setAutoRestockedItems] = useState([]);
+  const [managers, setManagers] = useState([
+    { id: 'manager-1', name: 'John Manager', email: 'john@mochkris.com', role: 'manager' },
+    { id: 'manager-2', name: 'Sarah Johnson', email: 'sarah@mochkris.com', role: 'manager' },
+  ]);
+
+  // Create new PO
+  const createPO = useCallback((poData) => {
+    const newPO = {
+      ...poData,
+      id: `po-${Date.now()}`,
+      poNumber: `PO-${Math.floor(1000 + Math.random() * 9000)}`,
+      status: 'draft',
+      createdAt: formatDate(new Date()),
+      items: poData.items || [],
+      history: [{
+        timestamp: formatDate(new Date()),
+        status: 'draft',
+        user: poData.createdBy,
+        notes: 'Purchase order created'
+      }],
+      totalAmount: poData.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0)
+    };
+
+    setPurchaseOrders(prev => [...prev, newPO]);
+    return newPO;
+  }, []);
+
+  // Approve and assign PO to manager
+  const approveAndAssignPO = useCallback((poId, { assignedTo, approvedBy, notes = '' }) => {
+    setPurchaseOrders(prev => prev.map(po => {
+      if (po.id === poId) {
+        return {
+          ...po,
+          status: 'approved',
+          assignedTo,
+          approvedBy,
+          approvedAt: formatDate(new Date()),
+          history: [
+            ...(po.history || []),
+            {
+              timestamp: formatDate(new Date()),
+              status: 'approved',
+              user: approvedBy,
+              notes: `Approved and assigned to ${managers.find(m => m.id === assignedTo)?.name || 'manager'}`
+            }
+          ]
+        };
+      }
+      return po;
+    }));
+  }, [managers]);
+
+  // Mark PO as purchased
+  const markAsPurchased = useCallback((poId, { purchasedBy, purchaseDate, invoiceNumber, notes = '' }) => {
+    setPurchaseOrders(prev => prev.map(po => {
+      if (po.id === poId) {
+        return {
+          ...po,
+          status: 'purchased',
+          purchaseDate: purchaseDate || formatDate(new Date()),
+          invoiceNumber,
+          history: [
+            ...(po.history || []),
+            {
+              timestamp: formatDate(new Date()),
+              status: 'purchased',
+              user: purchasedBy,
+              notes: `Marked as purchased${invoiceNumber ? ` (Invoice: ${invoiceNumber})` : ''}`
+            }
+          ]
+        };
+      }
+      return po;
+    }));
+  }, []);
+
+  // Receive items from PO
+  const receiveItems = useCallback((poId, { receivedBy, itemsReceived, notes = '', hasDiscrepancies = false }) => {
+    setPurchaseOrders(prev => prev.map(po => {
+      if (po.id === poId) {
+        // Update inventory
+        itemsReceived.forEach(receivedItem => {
+          const item = po.items.find(i => i.productId === receivedItem.productId);
+          if (item) {
+            setInventory(prevInv => prevInv.map(invItem => 
+              invItem.product_id === item.productId 
+                ? { ...invItem, qty: (invItem.qty || 0) + (receivedItem.quantityReceived || 0) } 
+                : invItem
+            ));
+          }
+        });
+
+        return {
+          ...po,
+          status: hasDiscrepancies ? 'partially_received' : 'completed',
+          receivedAt: formatDate(new Date()),
+          items: po.items.map(item => {
+            const received = itemsReceived.find(ri => ri.productId === item.productId);
+            return received ? { ...item, quantityReceived: received.quantityReceived } : item;
+          }),
+          history: [
+            ...(po.history || []),
+            {
+              timestamp: formatDate(new Date()),
+              status: hasDiscrepancies ? 'partially_received' : 'completed',
+              user: receivedBy,
+              notes: `Items received${hasDiscrepancies ? ' (with discrepancies)' : ''}${notes ? ` - ${notes}` : ''}`
+            }
+          ]
+        };
+      }
+      return po;
+    }));
+  }, []);
+
+  // Rate supplier after PO completion
+  const rateSupplier = useCallback((poId, { supplierId, rating, comment, ratedBy }) => {
+    // Update supplier's rating
+    setSuppliers(prevSuppliers => 
+      prevSuppliers.map(supplier => {
+        if (supplier.id === supplierId) {
+          const newRating = {
+            value: rating,
+            comment,
+            date: formatDate(new Date()),
+            poId,
+            ratedBy
+          };
+          
+          const updatedRatings = [...(supplier.ratings || []), newRating];
+          const newAverage = updatedRatings.reduce((sum, r) => sum + r.value, 0) / updatedRatings.length;
+          
+          return {
+            ...supplier,
+            rating: parseFloat(newAverage.toFixed(1)),
+            ratings: updatedRatings
+          };
+        }
+        return supplier;
+      })
+    );
+
+    // Update PO with rating info
+    setPurchaseOrders(prev => prev.map(po => 
+      po.id === poId 
+        ? { 
+            ...po, 
+            supplierRated: true,
+            supplierRating: rating,
+            supplierRatingComment: comment,
+            supplierRatingDate: formatDate(new Date()),
+            history: [
+              ...(po.history || []),
+              {
+                message: `Supplier rated ${rating} stars` + (comment ? `: ${comment}` : ''),
+                timestamp: formatDate(new Date()),
+                userId: 'system',
+                userName: 'System'
+              }
+            ]
+          }
+        : po
+    ));
+  }, [formatDate]); // Add formatDate to the dependency array
+
+  // Get POs based on user role
+  const getUserPOs = (userId, role) => {
+    if (role === 'OWNER') {
+      return purchaseOrders;
+    } else if (role === 'MANAGER') {
+      return purchaseOrders.filter(po => 
+        po.assignedTo === userId || 
+        po.status === 'approved' || 
+        po.status === 'purchased' ||
+        po.status === 'partially_received'
+      );
+    }
+    return [];
+  };
 
   // -------------------------
   // Auto-create Requisition (when low stock)
@@ -36,17 +256,39 @@ export const SystemProvider = ({ children }) => {
   // -------------------------
   // Manual create RF (department)
   // -------------------------
-  const createRequisition = (itemName, qty, product_id) => {
+  const createRequisition = (itemName, qty, product_id, supplier = null, price = 0) => {
+    // Check if we have a valid product_id (not 0 or undefined)
+    let itemId = product_id;
+    let itemExists = !isNaN(product_id) && product_id > 0 && inventory.some(item => item.product_id === product_id);
+    
+    // If item doesn't exist in inventory, add it
+    if (!itemExists) {
+      const newItem = {
+        name: itemName,
+        qty: 0, // Start with 0 since we're requesting it
+        price: parseFloat(price) || 0,
+        unit: 'pcs', // Default unit, can be updated later
+        restockThreshold: 3, // Default threshold
+        restockQty: 10 // Default restock quantity
+      };
+      const addedItem = addNewInventoryItem(newItem);
+      itemId = addedItem.product_id;
+    }
+
     const newReq = {
       id: Date.now(),
       item: itemName,
       qty: parseInt(qty),
-      product_id,
+      product_id: itemId, // Use existing or new item ID
+      price: parseFloat(price) || 0,
       status: 'PENDING_VP_APPROVAL',
-      history: ['Created by Department'],
+      history: ['Created by Department' + (supplier ? ` (Preferred Supplier: ${supplier.name})` : '')],
       requestDate: new Date().toLocaleDateString(),
+      ...(supplier && { supplier })
     };
+    
     setRequisitions(prev => [...prev, newReq]);
+    return newReq;
   };
 
   // -------------------------
@@ -178,30 +420,134 @@ export const SystemProvider = ({ children }) => {
     }
   };
 
+  // Function to update inventory when new stock is received
+  const updateInventory = (productId, quantity) => {
+    setInventory(prev => 
+      prev.map(item => 
+        item.product_id === productId 
+          ? { ...item, qty: item.qty + quantity } 
+          : item
+      )
+    );
+  };
+
+  // Update inventory item
+  const updateInventoryItem = (updatedItem) => {
+    setInventory(prev => 
+      prev.map(item => 
+        item.product_id === updatedItem.product_id ? { ...item, ...updatedItem } : item
+      )
+    );
+  };
+
+  // Update supplier
+  const updateSupplier = (updatedSupplier) => {
+    setSuppliers(prev => 
+      prev.map(supplier => 
+        supplier.id === updatedSupplier.id ? { ...supplier, ...updatedSupplier } : supplier
+      )
+    );
+  };
+
+  // Add new supplier
+  const addNewSupplier = (supplier) => {
+    const newSupplier = {
+      ...supplier,
+      id: `supplier-${Date.now()}`
+    };
+    setSuppliers(prev => [...prev, newSupplier]);
+    return newSupplier;
+  };
+
+  // Add new inventory item with price
+  const addNewInventoryItem = (item) => {
+    const newItem = {
+      ...item,
+      product_id: Math.max(0, ...inventory.map(i => i.product_id)) + 1,
+      price: item.price || 0,
+      qty: item.qty || 0,
+      restockThreshold: item.restockThreshold || 3,
+      restockQty: item.restockQty || 10,
+      unit: item.unit || 'pcs'
+    };
+    setInventory(prev => [...prev, newItem]);
+    return newItem;
+  };
+
+  // Create a new purchase request
+  const createPurchaseRequest = (requestData) => {
+    // Check if item exists in inventory by name (case insensitive)
+    const existingItem = inventory.find(item => 
+      item.name.toLowerCase() === requestData.item.toLowerCase()
+    );
+
+    let productId = existingItem ? existingItem.product_id : null;
+    
+    // If item doesn't exist, add it to inventory
+    if (!existingItem) {
+      const newItem = {
+        name: requestData.item,
+        qty: 0, // Start with 0 quantity since we're requesting it
+        price: requestData.price || 0,
+        unit: requestData.unit || 'pcs',
+        restockThreshold: 3, // Default threshold
+        restockQty: 10 // Default restock quantity
+      };
+      const addedItem = addNewInventoryItem(newItem);
+      productId = addedItem.product_id;
+    }
+
+    // Create the purchase request
+    const newRequest = {
+      id: `PR-${Date.now()}`,
+      item: requestData.item,
+      quantity: requestData.quantity,
+      unit: requestData.unit || 'pcs',
+      price: requestData.price || 0,
+      total: requestData.quantity * (requestData.price || 0),
+      purpose: requestData.purpose || '',
+      neededBy: requestData.neededBy || '',
+      product_id: productId,
+      status: 'PENDING',
+      requestDate: new Date().toISOString().split('T')[0]
+    };
+
+    // Add to purchase requests
+    setPurchaseRequests(prev => [...prev, newRequest]);
+    return newRequest;
+  };
+
   return (
-    <SystemContext.Provider value={{
-      inventory,
-      requisitions,
-      purchaseOrders,
-      autoRestockedItems,
-
-      // requisition flows
-      createRequisition,
-      vpSignRequisition,
-      custodianCheckInventory,
-
-      // purchase flows
-      createPurchaseOrder,
-      vpSignPO,
-      receiveDelivery,
-
-      // direct purchase
-      purchaseStockDirect,
-      completeDirectPurchase,
-
-      // expose auto-create for manual "Restock" button
-      autoCreateRequisition
-    }}>
+    <SystemContext.Provider
+      value={{
+        inventory,
+        requisitions,
+        purchaseOrders: getUserPOs('system', 'OWNER'),
+        purchaseRequests,
+        createPurchaseRequest,
+        suppliers,
+        autoRestockedItems,
+        createRequisition,
+        vpSignRequisition,
+        custodianCheckInventory,
+        createPurchaseOrder,
+        receiveDelivery,
+        autoCreateRequisition,
+        updateInventory,
+        updateInventoryItem,
+        updateSupplier,
+        addNewSupplier,
+        addNewInventoryItem,
+        purchaseStockDirect,
+        completeDirectPurchase,
+        vpSignPO,
+        createPO,
+        approveAndAssignPO,
+        markAsPurchased,
+        receiveItems,
+        rateSupplier
+      }}
+    >
       {children}
     </SystemContext.Provider>
   );

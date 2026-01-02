@@ -7,7 +7,8 @@ import {
   ShoppingCart,
   Truck,
   Boxes,
-  ChevronRight
+  ChevronRight,
+  Settings
 } from 'lucide-react';
 
 export default function Sidebar({
@@ -27,28 +28,38 @@ export default function Sidebar({
       case "DEPARTMENT":
         return [
           ...base,
-          { id: "requisition", label: "New Material Request (RF)", icon: FilePlus }
+          { id: "material_order", label: "New Material Order (PO)", icon: ShoppingCart },
+          { id: "approvals", label: "Pending RF Approvals", icon: CheckSquare },
+          { id: "management", label: "Manage Items & Suppliers", icon: Settings }
         ];
 
       case "VP":
         return [
-          ...base,
-          { id: "approvals", label: "Pending RF Approvals", icon: CheckSquare }
+          ...base
         ];
 
       case "CUSTODIAN":
         return [
           ...base,
+          { id: "requisition", label: "New Material Request (RF)", icon: FilePlus },
           { id: "inventory", label: "Inventory Monitoring", icon: Boxes },
-          { id: "delivery", label: "Receiving & Delivery (RM/AR)", icon: Truck }
+          { id: "delivery", label: "Receiving & Delivery (RM/AR)", icon: Truck },
+          { id: "purchasing", label: "Procurement & PO Creation", icon: ShoppingCart },
+          { id: "direct_purchase", label: "Direct Purchase", icon: ShoppingCart },
+          { id: "purchase_orders", label: "Purchase Orders", icon: ShoppingCart },
+          { id: "management", label: "Manage Items & Suppliers", icon: Settings }
         ];
 
     case "PURCHASING":
-  return [
-    ...base,
-    { id: "purchasing", label: "Procurement & PO Creation", icon: ShoppingCart },
-    { id: "direct_purchase", label: "Direct Purchase", icon: ShoppingCart }
-  ];
+      return [
+        ...base
+      ];
+    
+    case "ADMIN":
+      return [
+        ...base,
+        { id: "management", label: "Manage Items & Suppliers", icon: Settings }
+      ];
 
       default:
         return base;

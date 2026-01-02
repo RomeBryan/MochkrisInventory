@@ -39,14 +39,10 @@ export default function Header({
       {/* ---- PAGE TITLE / BREADCRUMB ---- */}
       <div className="flex flex-col">
         <span className="text-[11px] text-slate-400 uppercase tracking-wide">
-          {currentRole === "VP"
-            ? "Top Management"
-            : currentRole === "DEPARTMENT"
+          {currentRole === "DEPARTMENT"
             ? "Department Head"
             : currentRole === "CUSTODIAN"
-            ? "Warehouse / Property Custodian"
-            : currentRole === "PURCHASING"
-            ? "Purchasing Officer"
+            ? "General Manager"
             : "System User"}
         </span>
         <h2 className="text-slate-700 font-semibold text-lg leading-tight">
@@ -68,9 +64,7 @@ export default function Header({
             className="bg-transparent text-sm font-bold text-indigo-600 outline-none cursor-pointer"
           >
             <option value="DEPARTMENT">Department Head</option>
-            <option value="VP">VP / Top Mgmt</option>
-            <option value="CUSTODIAN">Custodian / Warehouse</option>
-            <option value="PURCHASING">Purchasing Officer</option>
+            <option value="CUSTODIAN">General Manager</option>
           </select>
         </div>
 
