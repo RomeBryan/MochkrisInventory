@@ -53,29 +53,30 @@ export default function Header({
       {/* ---- RIGHT SECTION ---- */}
       <div className="flex items-center gap-6">
 
-        {/* ROLE SIMULATOR */}
-        <div className="hidden sm:flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200 shadow-sm">
-          <span className="text-[10px] font-semibold text-slate-400 uppercase">
-            Simulate As:
-          </span>
-          <select
-            value={currentRole}
-            onChange={(e) => setCurrentRole(e.target.value)}
-            className="bg-transparent text-sm font-bold text-indigo-600 outline-none cursor-pointer"
-          >
-            <option value="DEPARTMENT">Department Head</option>
-            <option value="CUSTODIAN">General Manager</option>
-          </select>
-        </div>
-
-
-        {/* ---- Profile ---- */}
-        <div className="flex items-center gap-2 cursor-pointer">
-          <UserCircle size={32} className="text-slate-300" />
-          <div className="hidden md:block leading-tight">
-            <p className="text-sm font-bold text-slate-700">Admin User</p>
-            <p className="text-xs text-slate-400">Logged in</p>
+        {/* Profile and Logout */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <UserCircle size={32} className="text-slate-300" />
+            <div className="hidden md:block leading-tight">
+              <p className="text-sm font-bold text-slate-700">
+                {currentRole === "DEPARTMENT" ? "Department Head" : 
+                 currentRole === "CUSTODIAN" ? "General Manager" : "System User"}
+              </p>
+              <p className="text-xs text-slate-400">
+                Logged in
+              </p>
+            </div>
           </div>
+          <button
+            onClick={() => {
+              // Navigate to login page after logout
+              const event = new CustomEvent('logout');
+              window.dispatchEvent(event);
+            }}
+            className="px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm font-medium whitespace-nowrap"
+          >
+            Logout
+          </button>
         </div>
       </div>
     </header>
