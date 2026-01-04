@@ -1,3 +1,11 @@
+DEPARTMENT HEAD EMAIL: depthead@mochkris.com
+DEPARTMENT HEAD PASSWORD: depthead123
+
+GENERAL MANAGER EMAIL: gm@mochkris.com
+GENERAL MANAGER PASSWORD: gm123456
+
+
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

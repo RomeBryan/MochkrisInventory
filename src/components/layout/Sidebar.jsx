@@ -119,14 +119,6 @@ export default function Sidebar({
         })}
       </nav>
 
-      {/* ---- FOOTER ---- */}
-      <div className="p-4 border-t border-slate-800 text-xs text-slate-400">
-        <div className="bg-slate-800 rounded-lg p-3">
-          <p className="font-semibold text-slate-200">System v1.0.0</p>
-          <p className="opacity-75">Material Inventory Workflow</p>
-        </div>
-      </div>
-
       {/* Custom scroll styling */}
       <style>{`
         .custom-scroll::-webkit-scrollbar {

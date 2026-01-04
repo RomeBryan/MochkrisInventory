@@ -15,10 +15,10 @@ export default function PendingApprovals() {
   const [confirmData, setConfirmData] = useState(null);
 
   const pendingRF = requisitions.filter(
-    (r) => r.status === "PENDING_VP_APPROVAL"
+    (r) => r.status === "PENDING APPROVAL"
   );
   const pendingPO = purchaseOrders.filter(
-    (p) => p.status === "PENDING_PO_APPROVAL"
+    (p) => p.status === "PENDING APPROVAL"
   );
 
   const openConfirm = (item, type, approved) =>

@@ -243,7 +243,7 @@ export const SystemProvider = ({ children }) => {
       item: item.name,
       qty: item.restockQty,
       product_id: item.product_id,
-      status: 'PENDING_VP_APPROVAL',
+      status: 'PENDING APPROVAL',
       auto: true,
       history: ['Auto-generated due to low stock'],
       requestDate: new Date().toLocaleDateString(),
@@ -281,7 +281,7 @@ export const SystemProvider = ({ children }) => {
       qty: parseInt(qty),
       product_id: itemId, // Use existing or new item ID
       price: parseFloat(price) || 0,
-      status: 'PENDING_VP_APPROVAL',
+      status: 'PENDING APPROVAL',
       history: ['Created by Department' + (supplier ? ` (Preferred Supplier: ${supplier.name})` : '')],
       requestDate: new Date().toLocaleDateString(),
       ...(supplier && { supplier })
@@ -354,7 +354,7 @@ export const SystemProvider = ({ children }) => {
   };
 
   const vpSignPO = (poId, isApproved) => {
-    setPurchaseOrders(prev => prev.map(po => po.id === poId ? { ...po, status: isApproved ? 'SENT_TO_SUPPLIER' : 'RETURNED_TO_PURCHASING', history: [...po.history, isApproved ? 'Signed by VP. Sent to Supplier.' : 'Unsigned. Returned.'] } : po));
+    setPurchaseOrders(prev => prev.map(po => po.id === poId ? { ...po, status: isApproved ? 'SENT_TO_MANAGER' : 'RETURNED_TO_PURCHASING', history: [...po.history, isApproved ? 'Signed by VP. Sent to Manager.' : 'Unsigned. Returned.'] } : po));
   };
 
   // -------------------------
@@ -367,7 +367,7 @@ export const SystemProvider = ({ children }) => {
       createdAt: new Date().toISOString(),
       items, // array of { product_id, qty }
       supplier: supplierName,
-      status: 'SENT_TO_SUPPLIER',
+      status: 'SENT_TO_MANAGER',
       history: ['Direct Purchase Created'],
       type: 'DIRECT_PURCHASE'
     };
@@ -441,13 +441,20 @@ export const SystemProvider = ({ children }) => {
   };
 
   // Update supplier
-  const updateSupplier = (updatedSupplier) => {
-    setSuppliers(prev => 
-      prev.map(supplier => 
-        supplier.id === updatedSupplier.id ? { ...supplier, ...updatedSupplier } : supplier
+  const updateSupplier = useCallback((updatedSupplier) => {
+    setSuppliers(prevSuppliers => 
+      prevSuppliers.map(supplier => 
+        supplier.id === updatedSupplier.id 
+          ? { 
+              ...supplier, 
+              ...updatedSupplier,
+              // Ensure ratings array is preserved if not provided
+              ratings: updatedSupplier.ratings || supplier.ratings || []
+            } 
+          : supplier
       )
     );
-  };
+  }, []);
 
   // Add new supplier
   const addNewSupplier = (supplier) => {

@@ -128,12 +128,61 @@ export default function CreatePOForm({
               onChange={(e) => setFormData(prev => ({ ...prev, supplierId: e.target.value }))}
               className="w-full p-2 border rounded-md"
             >
-              <option value="">Select Supplier</option>
-              {suppliers.map(supplier => (
-                <option key={supplier.id} value={supplier.id}>
-                  {supplier.name}
-                </option>
-              ))}
+              <option value="">-- Select Supplier --</option>
+              {suppliers.map(supplier => {
+                try {
+                  const contactInfo = [];
+                  if (supplier.contact) contactInfo.push(supplier.contact);
+                  if (supplier.email) contactInfo.push(supplier.email);
+                  const contactStr = contactInfo.join(' • ');
+                  
+                  // Format rating text and color
+                  const formatRating = (rating) => {
+                    try {
+                      if (rating === null || rating === undefined || rating === '') return null;
+                      
+                      // Convert rating to string if it's a number or string number
+                      let ratingStr;
+                      if (typeof rating === 'number') {
+                        ratingStr = rating >= 4.5 ? 'excellent' : 
+                                  rating >= 3.5 ? 'good' : 
+                                  rating >= 2.5 ? 'average' : 'poor';
+                      } else if (typeof rating === 'string') {
+                        const numRating = parseFloat(rating);
+                        if (!isNaN(numRating)) {
+                          ratingStr = numRating >= 4.5 ? 'excellent' : 
+                                    numRating >= 3.5 ? 'good' : 
+                                    numRating >= 2.5 ? 'average' : 'poor';
+                        } else {
+                          ratingStr = rating.toLowerCase();
+                        }
+                      } else {
+                        console.warn('Unexpected rating type:', typeof rating, rating);
+                        return null;
+                      }
+                      
+                      // Return plain text for the dropdown
+                      return ratingStr.charAt(0).toUpperCase() + ratingStr.slice(1);
+                    } catch (error) {
+                      console.error('Error formatting rating:', error, 'Rating value:', rating);
+                      return null;
+                    }
+                  };
+
+                  return (
+                    <option key={supplier.id} value={supplier.id}>
+                      {supplier.name || 'Unnamed Supplier'}
+                      {contactStr && ` (${contactStr})`}
+                      {supplier.rating !== undefined && supplier.rating !== null && (
+                        ` (${formatRating(supplier.rating)})`
+                      )}
+                    </option>
+                  );
+                } catch (error) {
+                  console.error('Error rendering supplier option:', error, 'Supplier data:', supplier);
+                  return null;
+                }
+              })}
             </select>
           </div>
 
